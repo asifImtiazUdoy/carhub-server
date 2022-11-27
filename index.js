@@ -3,9 +3,9 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
 
+const app = express();
 const port = process.env.PORT || 5000;
 
-const app = express();
 
 // middleware
 app.use(cors());
@@ -22,25 +22,23 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const categoriesCollection = client.db('carhub').collection('categories');
+
     // Get all categories
-    app.get('/categories', async (res, req) => {
+    app.get('/categories', async (req, res) => {
       const categories = await categoriesCollection.find({}).toArray();
       res.send(categories);
     });
 
     // Create category
-    app.post('/category', async (res, req) => {
-      const category = req.body;
-      const result = await categoriesCollection.insertOne(data);
+    app.post('/category', async (req, res) => {
+      const result = await categoriesCollection.insertOne(req.body);
       res.send(result);
     });
   } finally {
 
   }
 }
-
 run().catch(e => console.error(e));
-
 
 app.get('/', (req, res) => {
   res.send("Carhub server is running");
