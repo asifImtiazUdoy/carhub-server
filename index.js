@@ -25,6 +25,17 @@ async function run() {
     const categoriesCollection = client.db('carhub').collection('categories');
     const usersCollection = client.db('carhub').collection('users');
 
+    //JWT token get
+    app.get('/jwt', async(req, res) => {
+      const email = req.query.email;
+      const user = usersCollection.findOne({email: email});
+      if (user) {
+        const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {expiresIn: '1h'});
+        return res.send({accessToken: token});
+      }
+      res.status(403).send('Unauthorized User');
+    })
+
     //User create
     app.post('/user', async (req, res) => {
       const user = await usersCollection.insertOne(req.body);
