@@ -22,7 +22,14 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const categoriesCollection = client.db('carhub').collection('categories');
+    const usersCollection = client.db('carhub').collection('users');
 
+    //User create
+    app.post('/user', async (req, res) => {
+      const user = await usersCollection.insertOne(req.body);
+      res.send(user);
+    })
+    
     // Get all categories
     app.get('/categories', async (req, res) => {
       const categories = await categoriesCollection.find({}).toArray();
