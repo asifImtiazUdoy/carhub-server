@@ -40,6 +40,7 @@ async function run() {
     const categoriesCollection = client.db('carhub').collection('categories');
     const usersCollection = client.db('carhub').collection('users');
     const productsCollection = client.db('carhub').collection('products');
+    const bookingsCollection = client.db('carhub').collection('bookings');
 
     //JWT token get
     app.get('/jwt', async (req, res) => {
@@ -74,7 +75,7 @@ async function run() {
       const email = req.params.email;
       let query = { email: email };
 
-      const user = await usersCollection.findOne(query).toArray();
+      const user = await usersCollection.findOne(query);
       res.send(user);
     })
 
@@ -90,11 +91,16 @@ async function run() {
       res.send(product);
     })
 
+    //Booking create
+    app.post('/booking', async (req, res) => {
+      const result = await bookingsCollection.insertOne(req.body);
+      res.send(result);
+    })
+
     //Product update
     app.put('/products/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
-      console.log(filter);
       const options = { upsert: true };
       const updatedDoc = {
         $set: {
