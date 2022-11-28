@@ -139,7 +139,7 @@ async function run() {
 
     //Get Products
     app.get('/products', async (req, res) => {
-      const email = req.query.type;
+      const email = req.query.email;
       let query = {};
 
       if (email) {
