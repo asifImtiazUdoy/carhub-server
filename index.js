@@ -20,6 +20,21 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1
 });
 
+const verifyJWT = (req, res, next) => {
+  const authHeader = req.headears.authorization;
+  if (!authHeader) {
+    return res.status(401).send('Unauthorized access');
+  }
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN, function (error, decoded) {
+    if (error) {
+      return res.status(401).send({message: "Forbidden Access"});
+    }
+    req.decoded = decoded;
+    next();
+  })
+}
+
 async function run() {
   try {
     const categoriesCollection = client.db('carhub').collection('categories');
