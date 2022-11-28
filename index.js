@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -28,7 +28,7 @@ const verifyJWT = (req, res, next) => {
   const token = authHeader.split(' ')[1];
   jwt.verify(token, process.env.ACCESS_TOKEN, function (error, decoded) {
     if (error) {
-      return res.status(401).send({message: "Forbidden Access"});
+      return res.status(401).send({ message: "Forbidden Access" });
     }
     req.decoded = decoded;
     next();
@@ -42,12 +42,12 @@ async function run() {
     const productsCollection = client.db('carhub').collection('products');
 
     //JWT token get
-    app.get('/jwt', async(req, res) => {
+    app.get('/jwt', async (req, res) => {
       const email = req.query.email;
-      const user = usersCollection.findOne({email: email});
+      const user = usersCollection.findOne({ email: email });
       if (user) {
-        const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {expiresIn: '1h'});
-        return res.send({accessToken: token});
+        const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1h' });
+        return res.send({ accessToken: token });
       }
       res.status(403).send('Unauthorized User');
     })
@@ -58,15 +58,24 @@ async function run() {
       let query = {};
 
       if (userType === "buyer") {
-        query = { type: "Buyer"}
+        query = { type: "Buyer" }
       }
 
       if (userType === "seller") {
-        query = { type: "Seller"}
+        query = { type: "Seller" }
       }
 
       const users = await usersCollection.find(query).toArray();
       res.send(users);
+    })
+
+    //Get specific user
+    app.get('/user/:email', async (req, res) => {
+      const email = req.params.email;
+      let query = { email: email };
+
+      const user = await usersCollection.findOne(query).toArray();
+      res.send(user);
     })
 
     //User create
@@ -81,28 +90,58 @@ async function run() {
       res.send(product);
     })
 
+    //Product update
+    app.put('/products/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      console.log(filter);
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          advertise: 1
+        }
+      }
+      const result = await productsCollection.updateOne(filter, updatedDoc, options);
+      res.send(result);
+    })
+
+    //Product delete
+    app.delete('/product/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await productsCollection.deleteOne(query);
+      res.send(result);
+    })
+
     //Get Products
     app.get('/products', async (req, res) => {
       const email = req.query.type;
       let query = {};
 
       if (email) {
-        query = { email: email}
+        query = { email: email }
       }
 
       const products = await productsCollection.find(query).toArray();
       res.send(products);
     })
-    
+
+    //Get advertise Products
+    app.get('/products/advertise', async (req, res) => {
+      let query = { advertise: 1 };
+      const products = await productsCollection.find(query).toArray();
+      res.send(products);
+    })
+
     //Get Products by category
     app.get('/category/products/:name', async (req, res) => {
       const name = req.params.name;
-        query = { category: name}
+      query = { category: name }
 
       const products = await productsCollection.find(query).toArray();
       res.send([products, name]);
     })
-    
+
     // Get all categories
     app.get('/categories', async (req, res) => {
       const categories = await categoriesCollection.find({}).toArray();
