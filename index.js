@@ -81,14 +81,32 @@ async function run() {
 
     //User create
     app.post('/user', async (req, res) => {
-      const user = await usersCollection.insertOne(req.body);
-      res.send(user);
+      const email = req.body.email;
+      const exists = await usersCollection.findOne({email: email});
+      if (!exists) {
+        const user = await usersCollection.insertOne(req.body);
+        res.send(user);
+      }else{
+        res.send('Already a user');
+      }
     })
 
     //Product create
     app.post('/product', async (req, res) => {
       const product = await productsCollection.insertOne(req.body);
       res.send(product);
+    })
+
+    //Booking get
+    app.get('/bookings', async (req, res) => {
+      const type = req.query.type;
+      const email = req.query.email;
+      let query = { seller_email: email }
+      if (type === 'buyer') {
+        query = {buyer_email: email}
+      }
+      const result = await bookingsCollection.find(query).toArray();
+      res.send(result);
     })
 
     //Booking create
