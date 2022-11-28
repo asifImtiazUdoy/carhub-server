@@ -77,8 +77,21 @@ async function run() {
 
     //Product create
     app.post('/product', async (req, res) => {
-      const user = await usersCollection.insertOne(req.body);
-      res.send(user);
+      const product = await productsCollection.insertOne(req.body);
+      res.send(product);
+    })
+
+    //Get Products
+    app.get('/products', async (req, res) => {
+      const email = req.query.type;
+      let query = {};
+
+      if (email) {
+        query = { email: email}
+      }
+
+      const products = await productsCollection.find(query).toArray();
+      res.send(products);
     })
     
     // Get all categories
