@@ -21,7 +21,7 @@ const client = new MongoClient(uri, {
 });
 
 const verifyJWT = (req, res, next) => {
-  const authHeader = req.headears.authorization;
+  const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res.status(401).send('Unauthorized access');
   }
@@ -53,8 +53,19 @@ async function run() {
       res.status(403).send('Unauthorized User');
     })
 
+    const verifyAdmin = async (req, res, next) => {
+      const decodedEmail = req.decoded.email;
+      const query = { email: decodedEmail };
+      const user = await usersCollection.findOne(query);
+
+      if (user?.type !== 'Admin') {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+      next();
+    }
+
     //User get
-    app.get('/users', async (req, res) => {
+    app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
       const userType = req.query.type;
       let query = {};
 
@@ -71,7 +82,7 @@ async function run() {
     })
 
     //Get specific user
-    app.get('/user/:email', async (req, res) => {
+    app.get('/user/:email', verifyJWT, async (req, res) => {
       const email = req.params.email;
       let query = { email: email };
 
@@ -82,12 +93,12 @@ async function run() {
     //User create
     app.post('/user', async (req, res) => {
       const email = req.body.email;
-      const exists = await usersCollection.findOne({email: email});
+      const exists = await usersCollection.findOne({ email: email });
       if (!exists) {
         const user = await usersCollection.insertOne(req.body);
         res.send(user);
-      }else{
-        res.send('Already a user');
+      } else {
+        res.send(exists);
       }
     })
 
@@ -103,7 +114,7 @@ async function run() {
       const email = req.query.email;
       let query = { seller_email: email }
       if (type === 'buyer') {
-        query = {buyer_email: email}
+        query = { buyer_email: email }
       }
       const result = await bookingsCollection.find(query).toArray();
       res.send(result);
@@ -116,7 +127,7 @@ async function run() {
     })
 
     //Product update
-    app.put('/products/:id', async (req, res) => {
+    app.put('/products/:id', verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const options = { upsert: true };
