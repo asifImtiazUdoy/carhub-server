@@ -94,6 +94,15 @@ async function run() {
       res.send(products);
     })
     
+    //Get Products by category
+    app.get('/category/products/:name', async (req, res) => {
+      const name = req.params.name;
+        query = { category: name}
+
+      const products = await productsCollection.find(query).toArray();
+      res.send([products, name]);
+    })
+    
     // Get all categories
     app.get('/categories', async (req, res) => {
       const categories = await categoriesCollection.find({}).toArray();
