@@ -39,6 +39,7 @@ async function run() {
   try {
     const categoriesCollection = client.db('carhub').collection('categories');
     const usersCollection = client.db('carhub').collection('users');
+    const productsCollection = client.db('carhub').collection('products');
 
     //JWT token get
     app.get('/jwt', async(req, res) => {
@@ -51,8 +52,31 @@ async function run() {
       res.status(403).send('Unauthorized User');
     })
 
+    //User get
+    app.get('/users', async (req, res) => {
+      const userType = req.query.type;
+      let query = {};
+
+      if (userType === "buyer") {
+        query = { type: "Buyer"}
+      }
+
+      if (userType === "seller") {
+        query = { type: "Seller"}
+      }
+
+      const users = await usersCollection.find(query).toArray();
+      res.send(users);
+    })
+
     //User create
     app.post('/user', async (req, res) => {
+      const user = await usersCollection.insertOne(req.body);
+      res.send(user);
+    })
+
+    //Product create
+    app.post('/product', async (req, res) => {
       const user = await usersCollection.insertOne(req.body);
       res.send(user);
     })
