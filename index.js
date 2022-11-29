@@ -81,6 +81,15 @@ async function run() {
       res.send(users);
     })
 
+    //Get specific product
+    app.get('/product/:id', async (req, res) => {
+      const id = req.params.id;
+      let query = { _id: ObjectId(id) };
+
+      const car = await productsCollection.findOne(query);
+      res.send(car);
+    })
+
     //Get specific user
     app.get('/user/:email', verifyJWT, async (req, res) => {
       const email = req.params.email;
@@ -103,13 +112,13 @@ async function run() {
     })
 
     //Product create
-    app.post('/product', async (req, res) => {
+    app.post('/product', verifyJWT, async (req, res) => {
       const product = await productsCollection.insertOne(req.body);
       res.send(product);
     })
 
     //Booking get
-    app.get('/bookings', async (req, res) => {
+    app.get('/bookings', verifyJWT, async (req, res) => {
       const type = req.query.type;
       const email = req.query.email;
       let query = { seller_email: email }
@@ -122,7 +131,16 @@ async function run() {
 
     //Booking create
     app.post('/booking', async (req, res) => {
+      const id = req.body.product_id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          booked: 1
+        }
+      }
       const result = await bookingsCollection.insertOne(req.body);
+      const update = await productsCollection.updateOne(filter, updatedDoc, options);
       res.send(result);
     })
 
@@ -141,12 +159,42 @@ async function run() {
     })
 
     //Product delete
-    app.delete('/product/:id', async (req, res) => {
+    app.delete('/product/:id', verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await productsCollection.deleteOne(query);
       res.send(result);
     })
+
+    //category delete
+    app.delete('/category/:id', verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await categoriesCollection.deleteOne(query);
+      res.send(result);
+    })
+
+    //user delete
+    app.delete('/user/:id', verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    })
+
+    //Make admin
+    app.put('/user/admin/:id', verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) }
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          type: 'Admin'
+        }
+      }
+      const result = await usersCollection.updateOne(filter, updatedDoc, options);
+      res.send(result);
+    });
 
     //Get Products
     app.get('/products', async (req, res) => {
@@ -184,7 +232,7 @@ async function run() {
     });
 
     // Create category
-    app.post('/category', async (req, res) => {
+    app.post('/category', verifyJWT, verifyAdmin, async (req, res) => {
       const result = await categoriesCollection.insertOne(req.body);
       res.send(result);
     });
